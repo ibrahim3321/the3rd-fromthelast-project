@@ -1,0 +1,6 @@
+ARM_SUBSCRIPTION_ID     = "4421688c-0a8d-4588-8dd0-338c5271d0af"
+author                  = "group6"
+resource_prefix          = "group6kub"
+environment             = "dev"
+resource_group_name     = "group6-prod"
+resource_group_location = "southafricanorth"
