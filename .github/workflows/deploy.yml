@@ -15,31 +15,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ 1. سحب الكود
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ 2. تسجيل الدخول إلى Azure
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # ✅ 3. تثبيت Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
-      # ✅ 4. إنشاء ملف terraform.tfvars من السر
       - name: Generate terraform.tfvars from secret
         working-directory: ./terraform
         run: |
           echo '${{ secrets.NAME_INFRA }}' > terraform.tfvars
-          echo "✅ Created terraform.tfvars:"
+          echo " Created terraform.tfvars:"
           cat terraform.tfvars
 
-      # ✅ 5. Terraform Init + Apply
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init
@@ -52,7 +47,6 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
-      # ✅ 6. استخراج اسم الـ ACR والـ AKS من Terraform Outputs
       - name: Get Terraform Outputs
         id: tfoutput
         working-directory: ./terraform
@@ -64,25 +58,21 @@ jobs:
           echo "aks_name=$AKS_NAME" >> $GITHUB_OUTPUT
           echo "rg_name=$RG_NAME" >> $GITHUB_OUTPUT
 
-      # ✅ 7. تسجيل الدخول في الـ ACR
       - name: Login to ACR
         run: az acr login --name ${{ steps.tfoutput.outputs.acr_name }}
 
-      # ✅ 8. Build + Push Backend Image
       - name: Build & Push backend
         run: |
           ACR_LOGIN_SERVER=${{ steps.tfoutput.outputs.acr_name }}.azurecr.io
           docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest ./backend
           docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest
 
-      # ✅ 9. Build + Push Frontend Image
       - name: Build & Push frontend
         run: |
           ACR_LOGIN_SERVER=${{ steps.tfoutput.outputs.acr_name }}.azurecr.io
           docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest ./frontend
           docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest
 
-      # ✅ 10. ربط kubectl بالـ AKS
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
@@ -90,12 +80,10 @@ jobs:
             --name ${{ steps.tfoutput.outputs.aks_name }} \
             --overwrite-existing
 
-      # ✅ 11. نشر ملفات Kubernetes
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f aks-yaml/
 
-      # ✅ 12. التحقق من النشر
       - name: Verify rollout
         run: |
           kubectl rollout status deployment/backend-deployment || true
