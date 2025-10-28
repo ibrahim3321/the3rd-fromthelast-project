@@ -79,20 +79,27 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
+      
       - name: Get AKS credentials
         run: |
-          az aks get-credentials \
-            --resource-group ${{ secrets.RG_NAME }} \
-            --name ${{ secrets.AKS_NAME }} \
-            --overwrite-existing
+          az aks get-credentials -n group6kub3rd-aks -g group600-3rd --overwrite-existing
+          az aks update -n group6kub3rd-aks -g group600-3rd --attach-acr g6wasan2acr
+
+      - name: Install NGINX Ingress Controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/cloud/deploy.yaml
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=300s
 
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f k8s/namespace-monitoring.yml
-          kubectl apply -f k8s/namespace-expensy.yml
+          # Apply namespaces first
+          kubectl apply -f k8s/monitoring-namespace.yml
+          kubectl apply -f k8s/namespace.yml
           kubectl apply -f k8s/prometheus-config.yml
-          kubectl apply -f k8s/prometheus.yml
+          kubectl apply -f k8s/prometheus-deploy.yml
           kubectl apply -f k8s/redis.yml
           kubectl apply -f k8s/backend-configmap.yml
           kubectl apply -f k8s/backend.yml
@@ -105,5 +112,5 @@ jobs:
 
       - name: Verify rollout
         run: |
-          kubectl rollout status deployment/backend-deployment || true
-          kubectl rollout status deployment/frontend-deployment || true
+          kubectl rollout status deployment/expensy-backend -n expensy || true
+          kubectl rollout status deployment/expensy-frontend -n expensy || true
