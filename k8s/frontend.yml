@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: group6kub3rdacr.azurecr.io/frontend:latest
+        image: g6wasan2acr.azurecr.io/expensy-frontend:v5
         ports:
         - containerPort: 3000
         envFrom:
