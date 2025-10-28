@@ -27,3 +27,10 @@ jobs:
           ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io
           docker build -t $ACR_LOGIN_SERVER/$IMAGE_FRONTEND:latest ./expensy_frontend
           docker push $ACR_LOGIN_SERVER/$IMAGE_FRONTEND:latest
+
+      - name: Trigger Deploy to AKS Workflow
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          repository: ${{ github.repository }}
+          workflow: deploy_aks.yml
+          ref: main
