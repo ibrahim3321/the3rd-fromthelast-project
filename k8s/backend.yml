@@ -19,13 +19,13 @@ spec:
           command: ['sh', '-c', 'until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done']
       containers:
         - name: backend
-          image: g6wasan2acr.azurecr.io/expensy-backend:v1
+          image: group6kub3rdacr.azurecr.io/backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8706
           envFrom:
             - configMapRef:
-                name: backend-config   # 🔗 هنا نربطه بالـ ConfigMap
+                name: backend-config   
           readinessProbe:
             tcpSocket:
               port: 8706
