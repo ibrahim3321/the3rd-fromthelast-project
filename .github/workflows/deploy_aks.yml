@@ -1,0 +1,24 @@
+name: Deploy to AKS
+on:
+  workflow_dispatch:
+
+env:
+  AKS_NAME: ${{ secrets.AKS_NAME }}
+  RG_NAME: ${{ secrets.RG_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --overwrite-existing
+
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -f k8s/
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/backend-deployment || true
+          kubectl rollout status deployment/frontend-deployment || true
