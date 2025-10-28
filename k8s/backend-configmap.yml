@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: expensy
+data:
+  HOST: "0.0.0.0"
+  PORT: "8706"
+  DATABASE_URI: "mongodb://mongo:27017/expensy"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+

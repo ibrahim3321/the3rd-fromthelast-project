@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expensy-frontend
+  namespace: expensy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expensy-frontend
+  template:
+    metadata:
+      labels:
+        app: expensy-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: g6wasan2acr.azurecr.io/expensy-frontend:v5
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: expensy-frontend
+  namespace: expensy
+spec:
+  selector:
+    app: expensy-frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+

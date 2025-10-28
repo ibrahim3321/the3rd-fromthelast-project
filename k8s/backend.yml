@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expensy-backend
+  namespace: expensy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expensy-backend
+  template:
+    metadata:
+      labels:
+        app: expensy-backend
+    spec:
+      initContainers:
+        - name: wait-for-mongo
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done']
+      containers:
+        - name: backend
+          image: g6wasan2acr.azurecr.io/expensy-backend:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8706
+          envFrom:
+            - configMapRef:
+                name: backend-config   # 🔗 هنا نربطه بالـ ConfigMap
+          readinessProbe:
+            tcpSocket:
+              port: 8706
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 8706
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: expensy-backend
+  namespace: expensy
+spec:
+  type: ClusterIP
+  selector:
+    app: expensy-backend
+  ports:
+    - port: 8080
+      targetPort: 8706
+
