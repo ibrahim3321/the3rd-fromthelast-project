@@ -72,8 +72,24 @@ jobs:
             --name ${{ secrets.AKS_NAME }} \
             --overwrite-existing
 
-      - name: Apply Kubernetes manifests
-        run: kubectl apply -f k8s/
+      - name: Apply Kubernetes namespaces
+        run: |
+          kubectl apply -f k8s/namespace-monitoring.yml
+          kubectl apply -f k8s/namespace-expensy.yml
+
+      - name: Apply remaining Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/prometheus-config.yml
+          kubectl apply -f k8s/prometheus.yml
+          kubectl apply -f k8s/redis.yml
+          kubectl apply -f k8s/backend-configmap.yml
+          kubectl apply -f k8s/backend.yml
+          kubectl apply -f k8s/frontend-configmap.yml
+          kubectl apply -f k8s/frontend.yml
+          kubectl apply -f k8s/grafana-deploy.yml
+          kubectl apply -f k8s/grafana-ingress.yml
+          kubectl apply -f k8s/ingress.yml
+          kubectl apply -f k8s/mongo.yml
 
       - name: Verify rollout
         run: |
