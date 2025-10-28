@@ -9,6 +9,9 @@ on:
 env:
   IMAGE_BACKEND: backend
   IMAGE_FRONTEND: frontend
+  ACR_NAME: ${{ secrets.ACR_NAME }}
+  AKS_NAME: ${{ secrets.AKS_NAME }}
+  RG_NAME: ${{ secrets.RG_NAME }}
 
 jobs:
   deploy:
@@ -47,37 +50,26 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
-      - name: Get Terraform Outputs
-        id: tfoutput
-        working-directory: ./terraform
-        run: |
-          ACR_NAME=$(terraform output -raw acr_name)
-          AKS_NAME=$(terraform output -raw aks_name)
-          RG_NAME=$(terraform output -raw resource_group_name)
-          echo "acr_name=$ACR_NAME" >> $GITHUB_OUTPUT
-          echo "aks_name=$AKS_NAME" >> $GITHUB_OUTPUT
-          echo "rg_name=$RG_NAME" >> $GITHUB_OUTPUT
-
       - name: Login to ACR
-        run: az acr login --name ${{ steps.tfoutput.outputs.acr_name }}
+        run: az acr login --name $ACR_NAME
 
       - name: Build & Push backend
         run: |
-          ACR_LOGIN_SERVER=${{ steps.tfoutput.outputs.acr_name }}.azurecr.io
+          ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io
           docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest ./backend
           docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest
 
       - name: Build & Push frontend
         run: |
-          ACR_LOGIN_SERVER=${{ steps.tfoutput.outputs.acr_name }}.azurecr.io
+          ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io
           docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest ./frontend
           docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest
 
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
-            --resource-group ${{ steps.tfoutput.outputs.rg_name }} \
-            --name ${{ steps.tfoutput.outputs.aks_name }} \
+            --resource-group $RG_NAME \
+            --name $AKS_NAME \
             --overwrite-existing
 
       - name: Apply Kubernetes manifests
@@ -88,4 +80,3 @@ jobs:
         run: |
           kubectl rollout status deployment/backend-deployment || true
           kubectl rollout status deployment/frontend-deployment || true
-
