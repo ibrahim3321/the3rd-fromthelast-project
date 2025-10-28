@@ -1,19 +1,76 @@
-name: Deploy to AKS
+name: Terraform + Build & Deploy (Full Stack)
+
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
+  IMAGE_BACKEND: backend
+  IMAGE_FRONTEND: frontend
+  ACR_NAME: ${{ secrets.ACR_NAME }}
   AKS_NAME: ${{ secrets.AKS_NAME }}
   RG_NAME: ${{ secrets.RG_NAME }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Generate terraform.tfvars from secret
+        working-directory: ./terraform
+        run: |
+          echo '${{ secrets.NAME_INFRA }}' > terraform.tfvars
+          echo " Created terraform.tfvars:"
+          cat terraform.tfvars
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build & Push backend
+        run: |
+          ACR_LOGIN_SERVER=${{ secrets.ACR_NAME }}.azurecr.io
+          docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest ./expensy_backend
+          docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_BACKEND }}:latest
+
+      - name: Build & Push frontend
+        run: |
+          ACR_LOGIN_SERVER=${{ secrets.ACR_NAME }}.azurecr.io
+          docker build -t $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest ./expensy_frontend
+          docker push $ACR_LOGIN_SERVER/${{ env.IMAGE_FRONTEND }}:latest
 
       - name: Get AKS credentials
-        run: az aks get-credentials --resource-group $RG_NAME --name $AKS_NAME --overwrite-existing
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ secrets.RG_NAME }} \
+            --name ${{ secrets.AKS_NAME }} \
+            --overwrite-existing
 
       - name: Apply Kubernetes manifests
         run: kubectl apply -f k8s/
