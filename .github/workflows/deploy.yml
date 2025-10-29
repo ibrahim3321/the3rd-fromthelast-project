@@ -93,6 +93,22 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=300s
 
+      - name: Enable AGIC
+        run: |
+          az aks enable-addons \
+          -a ingress-appgw \
+          -n group6kub3rd-aks \
+          -g group600-3rd \
+          --appgw-name myAppGw \
+          --appgw-subnet-cidr "10.225.0.0/16"
+
+      - name: Wait for AGIC Pod
+        run: |
+          kubectl wait -n kube-system \
+          --for=condition=Ready pod \
+          -l app=ingress-appgw \
+          --timeout=600s  
+
       - name: Apply Kubernetes manifests
         run: |
           # Apply namespaces first
@@ -109,8 +125,13 @@ jobs:
           kubectl apply -f k8s/grafana-ingress.yml
           kubectl apply -f k8s/ingress.yml
           kubectl apply -f k8s/mongo.yml
-
+      
       - name: Verify rollout
         run: |
           kubectl rollout status deployment/expensy-backend -n expensy || true
           kubectl rollout status deployment/expensy-frontend -n expensy || true
+
+      - name: Apply AGIC Ingress
+        run: |
+          kubectl apply -f k8s/agic.yml
+
