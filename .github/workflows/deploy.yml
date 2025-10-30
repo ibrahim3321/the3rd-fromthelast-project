@@ -135,3 +135,24 @@ jobs:
         run: |
           kubectl apply -f k8s/agic.yml
 
+      - name: Roult
+        run: |
+          kubectl rollout restart deployment ingress-appgw-deployment -n kube-system
+
+      - name: Apply Ansible Monitoring & ArgoCD
+        working-directory: ./ansible-monitoring-aks
+        run: |
+          # Install Ansible
+          sudo apt-get update
+          sudo apt-get install -y ansible python3-pip
+          pip3 install -r requirements.txt || true
+
+          # Apply ArgoCD apps
+          ansible-playbook deploy-argocd.yml -e "@values-argocd.yaml"
+
+          # Apply Monitoring stack (Prometheus & Grafana)
+          ansible-playbook deploy-monitoring.yml \
+            -e "@values-prometheus.yaml" \
+            -e "@values-grafana.yaml"
+
+
