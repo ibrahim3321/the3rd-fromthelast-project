@@ -15,7 +15,6 @@ It combines containerized frontend and backend components with managed databases
 <img width="1261" height="709" alt="image" src="https://github.com/user-attachments/assets/6a2884ac-e560-405d-b8dc-ff6f04daf011" />
 
 
-
 ---
 
 ## 💡 Application Architecture
