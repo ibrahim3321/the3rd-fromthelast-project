@@ -135,8 +135,6 @@ This provided insights into resource usage, pod health, and application performa
 - [ First Project](https://github.com/ibrahim3321/the-last-projects-.git)  
 - [Second Project](https://github.com/anas-443005129/master_projectg6.git)  
 
-*(Replace `USERNAME/SECOND-REPO` and `USERNAME/THIRD-REPO` with your actual GitHub repository links.)*
-
 ---
 
 ## 🏁 Conclusion
